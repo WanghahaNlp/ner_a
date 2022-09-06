@@ -28,8 +28,8 @@ def get_parser():
     parser.add_argument("--ckpt_path", default="./ckpt", type=str, help="embedding文件地址")
     parser.add_argument("--result_path", default="./result", type=str, help="dev or test 预测结果存储地址")
 
-    parser.add_argument("--lower", default=True, type=bool, help="英文是否转换成小写字母")
-    parser.add_argument("--zeros", default=True, type=bool, help="数字是否转换成0")
+    parser.add_argument("--lower", default=False, type=bool, help="英文是否转换成小写字母")
+    parser.add_argument("--zeros", default=False, type=bool, help="数字是否转换成0")
     parser.add_argument("--pre_emb", default=True, type=bool, help="是否使用预训练向量")
 
     parser.add_argument("--batch_size", default=20, type=int, help="batch size")
@@ -226,6 +226,11 @@ def train(args):
                     logger.debug(f"迭代: {iteration}次\t 步数: {step % steps_per_epoch}/{steps_per_epoch}\t loss: {np.mean(loss)}")
                     loss = []
             best = evaluate(args, sess, model, "dev", dev_manager, id_to_tag)
+            if i == 0:
+                1
+            elif i % 30 == 0 or i == 99:
+                logger.info("----------------------------")
+                train_best = evaluate(args, sess, model, "train", train_manager, id_to_tag)
             if best:
                 save_model(sess, model, args.ckpt_path)
             evaluate(args, sess, model, "test", test_manager, id_to_tag)
