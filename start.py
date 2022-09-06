@@ -216,14 +216,15 @@ def train(args):
     with sess.as_default():
         model = create_model(sess, args, config, id_to_char, is_train=True)
         logger.info("开始进行训练")
+        loss = []
         for i in range(100):
             for batch in train_manager.iter_batch(shuffle=True):
-                loss = []
                 step, batch_loss = model.run_step(sess, True, batch)
                 loss.append(batch_loss)
                 if step % args.steps_check == 0:
                     iteration = step // steps_per_epoch + 1
                     logger.debug(f"迭代: {iteration}次\t 步数: {step % steps_per_epoch}/{steps_per_epoch}\t loss: {np.mean(loss)}")
+                    loss = []
             best = evaluate(args, sess, model, "dev", dev_manager, id_to_tag)
             if best:
                 save_model(sess, model, args.ckpt_path)
