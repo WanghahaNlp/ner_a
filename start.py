@@ -140,8 +140,14 @@ def create_model(sess, args, config, id_to_char, is_train=True):
     return model
 
 
+def del_model(args):
+    if input("是否删除模型所有的文件(0/1):") == "1":
+        os.system(f"rm -rf {args.ckpt_path} {args.result_path} log/ ")
+
+
 def train(args):
     """训练"""
+    del_model(args)
     # 读取数据集
     train_sentences = load_sentences(args.train_file, args.lower, args.zeros)
     dev_sentences = load_sentences(args.dev_file, args.lower, args.zeros)
@@ -207,21 +213,21 @@ def train(args):
     # 批次
     steps_per_epoch = train_manager.len_data
     sess = tf.compat.v1.Session(config=tf_config)
-    sess.as_default()
-    model = create_model(sess, args, config, id_to_char, is_train=True)
-    logger.info("开始进行训练")
-    for i in range(100):
-        for batch in train_manager.iter_batch(shuffle=True):
-            loss = []
-            step, batch_loss = model.run_step(sess, True, batch)
-            loss.append(batch_loss)
-            if step % args.steps_check == 0:
-                iteration = step // steps_per_epoch + 1
-                logger.debug(f"迭代: {iteration}次\t 步数: {step % steps_per_epoch}/{steps_per_epoch}\t loss: {np.mean(loss)}")
-        best = evaluate(args, sess, model, "dev", dev_manager, id_to_tag)
-        if best:
-            save_model(sess, model, args.ckpt_path)
-        evaluate(args, sess, model, "test", test_manager, id_to_tag)
+    with sess.as_default():
+        model = create_model(sess, args, config, id_to_char, is_train=True)
+        logger.info("开始进行训练")
+        for i in range(100):
+            for batch in train_manager.iter_batch(shuffle=True):
+                loss = []
+                step, batch_loss = model.run_step(sess, True, batch)
+                loss.append(batch_loss)
+                if step % args.steps_check == 0:
+                    iteration = step // steps_per_epoch + 1
+                    logger.debug(f"迭代: {iteration}次\t 步数: {step % steps_per_epoch}/{steps_per_epoch}\t loss: {np.mean(loss)}")
+            best = evaluate(args, sess, model, "dev", dev_manager, id_to_tag)
+            if best:
+                save_model(sess, model, args.ckpt_path)
+            evaluate(args, sess, model, "test", test_manager, id_to_tag)
     tf.compat.v1.summary.merge_all()
     board = tf.compat.v1.summary.FileWriter("./log", sess.graph)
     board.close()
